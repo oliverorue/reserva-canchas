@@ -69,16 +69,23 @@ Cubren superposición (incluido el solapado 10–11:30 vs 11–12), reservas con
 
 ```
 app/
-  config.py      # settings (DATABASE_URL)
+  config.py      # settings (DATABASE_URL) + horario del club
   database.py    # engine + session
   models.py      # Court, Reservation
-  schemas.py     # Pydantic schemas
+  schemas.py     # Pydantic schemas (validación de entrada)
   services.py    # reglas de negocio
-  main.py        # app FastAPI + rutas + seed
+  main.py        # app FastAPI + rutas + seed + CSRF
 templates/       # base, dashboard, courts, reservations
 static/          # styles.css, app.js
 tests/           # conftest + tests
 ```
+
+## Detalles técnicos
+
+- **CSRF:** los formularios `POST` (crear/cancelar) llevan un token CSRF en cookie (doble envío) que se valida en el servidor.
+- **Índice:** la tabla `reservations` tiene un índice compuesto `(court_id, date)` para acelerar la consulta de superposición.
+- **Timezones:** las horas/fechas de negocio (`date`, `start_time`, `end_time`) se guardan en hora local; el `created_at` se guarda en UTC (`timestamp with time zone`).
+- **Validación con Pydantic:** el nombre se limpia (`strip_whitespace`) y valida dentro del esquema, no en la ruta.
 
 ## Uso de IA
 
@@ -94,5 +101,5 @@ tests/           # conftest + tests
 
 - **Superposición con reservas consecutivas:** hubo que definir con precisión la condición de solape (`inicio_nueva < fin_existente` y `fin_nueva > inicio_existente`) para que 10–11 y 11–12 se consideren válidas.
 - **Instalación de Docker/PostgreSQL:** Docker no estaba instalado inicialmente y su instalación requirió `sudo` y agregar el usuario al grupo `docker`. El flujo se validó primero con SQLite (desarrollo local) y luego contra PostgreSQL vía `docker compose up --build`, confirmando que el mismo código funciona en ambos motores.
-- **Zona horaria:** las fechas/horas se manejan en hora local del servidor (sin timezone). En Docker se monta `/etc/localtime` del host para que el contenedor use la misma hora local y la regla de "fechas pasadas" sea correcta. Sigue siendo una limitación conocida si la app se desplegara multi-zona (habría que usar datetimes con timezone).
+- **Zona horaria:** las horas/fechas de negocio se manejan en hora local del servidor (sin timezone), comparando contra `datetime.now()` local; en Docker se monta `/etc/localtime` del host para que el contenedor coincida con la hora local y la regla de "fechas pasadas" sea correcta. El `created_at` sí se guarda en UTC. Para un despliegue multi-zona real habría que migrar toda la lógica de negocio a datetimes con timezone.
 - **Alcance:** las 4 funcionalidades y las 4 reglas obligatorias están completas. Además se implementaron dos de los tres aspectos opcionales: la grilla por horas del día y las pruebas automáticas de superposición; también la regla opcional de club cerrado (08:00–22:00). Quedan fuera (posibles mejoras): Alembic para migraciones, autenticación de usuarios, edición de reservas, notificaciones y manejo de timezones.

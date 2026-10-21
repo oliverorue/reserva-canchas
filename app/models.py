@@ -1,6 +1,6 @@
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timezone
 
-from sqlalchemy import Date, DateTime, ForeignKey, String, Time
+from sqlalchemy import Date, DateTime, ForeignKey, Index, String, Time
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -19,6 +19,7 @@ class Court(Base):
 
 class Reservation(Base):
     __tablename__ = "reservations"
+    __table_args__ = (Index("ix_reservations_court_id_date", "court_id", "date"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     court_id: Mapped[int] = mapped_column(ForeignKey("courts.id"), nullable=False)
@@ -26,6 +27,8 @@ class Reservation(Base):
     date: Mapped[date] = mapped_column(Date, nullable=False)
     start_time: Mapped[time] = mapped_column(Time, nullable=False)
     end_time: Mapped[time] = mapped_column(Time, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
 
     court: Mapped[Court] = relationship(back_populates="reservations")

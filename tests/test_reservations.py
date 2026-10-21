@@ -17,7 +17,13 @@ def _count_reservations() -> int:
         session.close()
 
 
+def _get_csrf(client) -> str:
+    client.get(f"/courts/1/reservations?date={TOMORROW}")
+    return client.cookies.get("csrf_token")
+
+
 def _post(client, court_id=1, name="Juan Pérez", day=TOMORROW, start="10:00", end="11:00"):
+    token = _get_csrf(client)
     return client.post(
         "/reservations",
         data={
@@ -26,6 +32,7 @@ def _post(client, court_id=1, name="Juan Pérez", day=TOMORROW, start="10:00", e
             "date": day,
             "start_time": start,
             "end_time": end,
+            "csrf_token": token,
         },
         follow_redirects=False,
     )
@@ -101,6 +108,22 @@ def test_empty_name_rejected(client):
     assert _count_reservations() == 0
 
 
+def test_csrf_required(client):
+    resp = client.post(
+        "/reservations",
+        data={
+            "court_id": 1,
+            "person_name": "X",
+            "date": TOMORROW,
+            "start_time": "10:00",
+            "end_time": "11:00",
+            "csrf_token": "token-falso",
+        },
+        follow_redirects=False,
+    )
+    assert resp.status_code == 403
+
+
 def test_exact_one_hour_valid(client):
     resp = _post(client, start="10:00", end="11:00")
     assert "success=" in resp.headers["location"]
@@ -121,7 +144,7 @@ def test_cancel_reservation(client):
 
     resp = client.post(
         f"/reservations/{reservation_id}/cancel",
-        data={"court_id": 1, "date": TOMORROW},
+        data={"court_id": 1, "date": TOMORROW, "csrf_token": _get_csrf(client)},
         follow_redirects=False,
     )
     assert resp.status_code == 303

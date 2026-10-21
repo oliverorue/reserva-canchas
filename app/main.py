@@ -1,3 +1,4 @@
+import secrets
 from contextlib import asynccontextmanager
 from datetime import date, datetime, time
 from pathlib import Path
@@ -7,6 +8,7 @@ from fastapi import Depends, FastAPI, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -56,6 +58,23 @@ def _parse_time(value: str) -> time:
         return datetime.strptime(value, "%H:%M").time()
     except ValueError:
         raise HTTPException(status_code=400, detail="Hora inválida. Usar HH:MM.")
+
+
+CSRF_COOKIE = "csrf_token"
+
+
+def _get_csrf_token(request: Request) -> str:
+    token = request.cookies.get(CSRF_COOKIE)
+    if not token:
+        token = secrets.token_urlsafe(32)
+    return token
+
+
+def _verify_csrf(request: Request, form_token: str | None) -> bool:
+    cookie_token = request.cookies.get(CSRF_COOKIE)
+    if not cookie_token or not form_token:
+        return False
+    return secrets.compare_digest(cookie_token, form_token)
 
 
 DAY_START_MINUTES = CLUB_OPEN_MINUTES
@@ -150,50 +169,54 @@ def court_reservations(
             .order_by(models.Reservation.start_time)
         )
     )
-    return templates.TemplateResponse(
+    csrf_token = _get_csrf_token(request)
+    response = templates.TemplateResponse(
         request,
         "reservations.html",
         {
             "court": court,
             "day": day,
             "reservations": reservations,
+            "csrf_token": csrf_token,
             "error": request.query_params.get("error"),
             "success": request.query_params.get("success"),
         },
     )
+    response.set_cookie(CSRF_COOKIE, csrf_token, httponly=True, samesite="lax")
+    return response
 
 
 @app.post("/reservations")
 def create(
+    request: Request,
     court_id: int = Form(...),
     person_name: str = Form(...),
     date: str = Form(...),
     start_time: str = Form(...),
     end_time: str = Form(...),
+    csrf_token: str = Form(...),
     db: Session = Depends(get_db),
 ):
+    if not _verify_csrf(request, csrf_token):
+        raise HTTPException(status_code=403, detail="Token CSRF inválido.")
+
     court = db.get(models.Court, court_id)
     if court is None:
         raise HTTPException(status_code=404, detail="Cancha no encontrada")
 
-    name = person_name.strip()
-    if not name:
-        return _redirect_back(court_id, date, error="El nombre de la persona es obligatorio.")
-    if len(name) > 100:
-        return _redirect_back(
-            court_id, date, error="El nombre no puede superar los 100 caracteres."
-        )
-
     try:
         data = ReservationCreate(
             court_id=court_id,
-            person_name=name,
+            person_name=person_name,
             date=_parse_date(date),
             start_time=_parse_time(start_time),
             end_time=_parse_time(end_time),
         )
     except HTTPException as exc:
         return _redirect_back(court_id, date, error=exc.detail)
+    except ValidationError as exc:
+        message = exc.errors()[0]["msg"].removeprefix("Value error, ")
+        return _redirect_back(court_id, date, error=message)
 
     result = create_reservation(db, data)
     if isinstance(result, list):
@@ -207,10 +230,15 @@ def create(
 @app.post("/reservations/{reservation_id}/cancel")
 def cancel(
     reservation_id: int,
+    request: Request,
     court_id: int = Form(...),
     date: str = Form(...),
+    csrf_token: str = Form(...),
     db: Session = Depends(get_db),
 ):
+    if not _verify_csrf(request, csrf_token):
+        raise HTTPException(status_code=403, detail="Token CSRF inválido.")
+
     reservation = db.get(models.Reservation, reservation_id)
     if reservation is None:
         return _redirect_back(court_id, date, error="La reserva no existe.")

@@ -1,6 +1,7 @@
 from datetime import date, time
+from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, StringConstraints, field_validator
 
 
 class CourtOut(BaseModel):
@@ -12,10 +13,20 @@ class CourtOut(BaseModel):
 
 class ReservationCreate(BaseModel):
     court_id: int
-    person_name: str = Field(min_length=1, max_length=100)
+    person_name: Annotated[str, StringConstraints(strip_whitespace=True)]
     date: date
     start_time: time
     end_time: time
+
+    @field_validator("person_name")
+    @classmethod
+    def _validate_person_name(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("El nombre de la persona es obligatorio.")
+        if len(value) > 100:
+            raise ValueError("El nombre no puede superar los 100 caracteres.")
+        return value
 
 
 class ReservationOut(BaseModel):

@@ -24,6 +24,7 @@
               <span>{{ r.person_name }}</span>
             </div>
             <form method="post" action="/reservations/{{ r.id }}/cancel">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
               <input type="hidden" name="court_id" value="{{ court.id }}">
               <input type="hidden" name="date" value="{{ day.strftime('%Y-%m-%d') }}">
               <button type="submit" class="btn btn-danger" onclick="return confirm('¿Cancelar esta reserva?')">Cancelar</button>
@@ -39,6 +40,7 @@
   <section class="card">
     <h2>Nueva reserva</h2>
     <form method="post" action="/reservations" class="reservation-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <input type="hidden" name="court_id" value="{{ court.id }}">
       <input type="hidden" name="date" value="{{ day.strftime('%Y-%m-%d') }}">
       <label>
