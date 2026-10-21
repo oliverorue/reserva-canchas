@@ -89,17 +89,16 @@ tests/           # conftest + tests
 
 ## Uso de IA
 
-*(Borrador — personalizar antes de entregar.)*
-
-- **Herramienta:** Kilo (agente de IA basado en Claude).
-- **Para qué se usó:** comprender el enunciado, diseñar el plan, generar el esqueleto del código (FastAPI + SQLAlchemy + Jinja2), escribir los tests, el `Dockerfile`/`docker-compose.yml` y un borrador de este README.
-- **Qué se aceptó:** la estructura general, el modelo de datos, la lógica de las reglas de negocio y los tests.
-- **Qué se modificó:** ajustes menores de nombres, mensajes y organización para mantenerlo simple y legible.
-- **Qué se descartó:** propuestas innecesarias para el alcance del challenge (migraciones con Alembic, frontend SPA con build, manejo de zonas horarias).
+- **Herramientas:** Kilo (agente de IA, conectado a través de la API de DeepSeek) y Gemini (para sugerencias de mejora).
+- **Para qué las usé:** comprender el enunciado y las reglas de negocio, diseñar la arquitectura, generar el código del backend (FastAPI + SQLAlchemy), el frontend (Jinja2 + CSS), los tests, el `Dockerfile`/`docker-compose.yml` y este README, además de corregir errores detectados durante las pruebas (por ejemplo, la zona horaria del contenedor).
+- **Qué acepté sin cambios:** la mayor parte del código generado (modelos, servicios, rutas, templates y tests).
+- **Qué modifiqué:** incorporé mejoras técnicas que consulté con Gemini — validación con Pydantic, protección CSRF, índice compuesto en la base de datos y `created_at` en UTC — y ajusté textos y mensajes.
+- **Qué descarté:** propuestas que excedían el alcance del challenge (migraciones con Alembic, frontend SPA con build step, autenticación de usuarios).
+- Declaro que comprendo el funcionamiento de cada parte del código y puedo explicarlo, haya sido escrita por una herramienta o no.
 
 ## Problemas encontrados y alcance
 
 - **Superposición con reservas consecutivas:** hubo que definir con precisión la condición de solape (`inicio_nueva < fin_existente` y `fin_nueva > inicio_existente`) para que 10–11 y 11–12 se consideren válidas.
 - **Instalación de Docker/PostgreSQL:** Docker no estaba instalado inicialmente y su instalación requirió `sudo` y agregar el usuario al grupo `docker`. El flujo se validó primero con SQLite (desarrollo local) y luego contra PostgreSQL vía `docker compose up --build`, confirmando que el mismo código funciona en ambos motores.
 - **Zona horaria:** las horas/fechas de negocio se manejan en hora local del servidor (sin timezone), comparando contra `datetime.now()` local; en Docker se monta `/etc/localtime` del host para que el contenedor coincida con la hora local y la regla de "fechas pasadas" sea correcta. El `created_at` sí se guarda en UTC. Para un despliegue multi-zona real habría que migrar toda la lógica de negocio a datetimes con timezone.
-- **Alcance:** las 4 funcionalidades y las 4 reglas obligatorias están completas. Además se implementaron dos de los tres aspectos opcionales: la grilla por horas del día y las pruebas automáticas de superposición; también la regla opcional de club cerrado (08:00–22:00). Quedan fuera (posibles mejoras): Alembic para migraciones, autenticación de usuarios, edición de reservas, notificaciones y manejo de timezones.
+- **Alcance:** las 4 funcionalidades y las 4 reglas obligatorias están completas. También se implementaron los tres aspectos opcionales: la grilla por horas del día, las pruebas automáticas de superposición y la regla de club cerrado (08:00–22:00). Quedan fuera (posibles mejoras): Alembic para migraciones, autenticación de usuarios, edición de reservas, notificaciones y manejo de timezones.
