@@ -1,15 +1,58 @@
 {% extends "base.html" %}
 {% block title %}Dashboard — Reserva de Canchas{% endblock %}
 {% block content %}
-<h1>Dashboard</h1>
-<p class="muted">Reservas de hoy: {{ today.strftime('%d/%m/%Y') }}</p>
+<div class="page-header dashboard-head">
+  <div>
+    <h1>Dashboard</h1>
+    <p class="muted">{{ today.strftime('%A %d de %B de %Y') | title }}</p>
+  </div>
+  <div class="stat-pill">
+    <span class="stat-number">{{ reservations_today }}</span>
+    <span class="stat-label">reserva{{ 's' if reservations_today != 1 else '' }} hoy</span>
+  </div>
+</div>
+
+<section class="card schedule-card">
+  <h2>Agenda del día</h2>
+  <div class="schedule-scroll">
+    <table class="schedule">
+      <thead>
+        <tr>
+          <th class="time-col"></th>
+          {% for court in courts %}
+            <th>{{ court.name }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for i in range(schedule.n_slots) %}
+          <tr>
+            <td class="time-col">{{ schedule.slot_labels[i] }}</td>
+            {% for court in courts %}
+              {% set cell = schedule.grid[court.id][i] %}
+              {% if cell.kind == 'start' %}
+                <td class="booked" rowspan="{{ cell.span }}">
+                  <strong>{{ cell.reservation.person_name }}</strong>
+                  <span>{{ cell.reservation.start_time.strftime('%H:%M') }} – {{ cell.reservation.end_time.strftime('%H:%M') }}</span>
+                </td>
+              {% elif cell.kind == 'free' %}
+                <td class="free"></td>
+              {% endif %}
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="muted legend"><span class="dot dot-booked"></span> Ocupado &nbsp; <span class="dot dot-free"></span> Libre</p>
+</section>
 
 <div class="court-grid">
   {% for court in courts %}
-    <section class="card">
+    <section class="card court-card">
       <div class="card-header">
         <h2>{{ court.name }}</h2>
-        <a class="btn btn-secondary" href="/courts/{{ court.id }}/reservations?date={{ today }}">Ver / Reservar</a>
+        <span class="badge">{{ by_court.get(court.id, []) | length }} hoy</span>
       </div>
       {% set items = by_court.get(court.id, []) %}
       {% if items %}
@@ -24,6 +67,7 @@
       {% else %}
         <p class="muted">Sin reservas hoy.</p>
       {% endif %}
+      <a class="btn btn-primary btn-block" href="/courts/{{ court.id }}/reservations?date={{ today }}">Ver / Reservar</a>
     </section>
   {% endfor %}
 </div>

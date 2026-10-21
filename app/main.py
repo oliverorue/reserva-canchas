@@ -57,6 +57,43 @@ def _parse_time(value: str) -> time:
         raise HTTPException(status_code=400, detail="Hora inválida. Usar HH:MM.")
 
 
+DAY_START_MINUTES = 8 * 60
+DAY_END_MINUTES = 22 * 60
+SLOT_MINUTES = 30
+
+
+def _to_minutes(t: time) -> int:
+    return t.hour * 60 + t.minute
+
+
+def build_day_schedule(courts: list[models.Court], reservations: list[models.Reservation]) -> dict:
+    n_slots = (DAY_END_MINUTES - DAY_START_MINUTES) // SLOT_MINUTES
+    slot_labels = [
+        f"{(DAY_START_MINUTES + i * SLOT_MINUTES) // 60:02d}:{(DAY_START_MINUTES + i * SLOT_MINUTES) % 60:02d}"
+        for i in range(n_slots)
+    ]
+    by_court = {c.id: [r for r in reservations if r.court_id == c.id] for c in courts}
+
+    grid: dict[int, list[dict]] = {}
+    for court in courts:
+        cells: list[dict] = [{"kind": "free"} for _ in range(n_slots)]
+        for r in by_court[court.id]:
+            start_min = _to_minutes(r.start_time)
+            end_min = _to_minutes(r.end_time)
+            if end_min <= DAY_START_MINUTES or start_min >= DAY_END_MINUTES:
+                continue
+            start_slot = max(0, (start_min - DAY_START_MINUTES) // SLOT_MINUTES)
+            end_slot = min(n_slots, ((end_min - DAY_START_MINUTES - 1) // SLOT_MINUTES) + 1)
+            if end_slot <= start_slot:
+                end_slot = start_slot + 1
+            cells[start_slot] = {"kind": "start", "reservation": r, "span": end_slot - start_slot}
+            for i in range(start_slot + 1, end_slot):
+                cells[i] = {"kind": "covered"}
+        grid[court.id] = cells
+
+    return {"n_slots": n_slots, "slot_labels": slot_labels, "grid": grid}
+
+
 @app.get("/")
 def dashboard(request: Request, db: Session = Depends(get_db)):
     today = date.today()
@@ -69,6 +106,7 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
         )
     )
     by_court = {c.id: [r for r in reservations if r.court_id == c.id] for c in courts}
+    schedule = build_day_schedule(courts, reservations)
     return templates.TemplateResponse(
         request,
         "dashboard.html",
@@ -76,6 +114,8 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
             "courts": courts,
             "by_court": by_court,
             "today": today,
+            "reservations_today": len(reservations),
+            "schedule": schedule,
             "error": request.query_params.get("error"),
             "success": request.query_params.get("success"),
         },

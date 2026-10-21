@@ -162,3 +162,113 @@ input[type="date"] {
 .flash-success { background: #f0fdf4; color: var(--success); border: 1px solid #bbf7d0; }
 
 .page-header { margin-bottom: 16px; }
+
+/* Dashboard */
+.dashboard-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.stat-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 20px;
+  min-width: 90px;
+}
+
+.stat-number {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1;
+}
+
+.stat-label { font-size: 0.75rem; color: var(--muted); }
+
+.schedule-card { margin-bottom: 20px; }
+
+.schedule-scroll { overflow-x: auto; }
+
+.schedule {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.schedule th,
+.schedule td {
+  border: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+  padding: 0;
+  height: 22px;
+}
+
+.schedule thead th {
+  background: var(--bg);
+  padding: 8px 10px;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.schedule .time-col {
+  width: 52px;
+  min-width: 52px;
+  text-align: right;
+  padding: 0 6px;
+  font-size: 0.72rem;
+  color: var(--muted);
+  border-left: none;
+}
+
+.schedule td.booked {
+  background: #dbeafe;
+  border-left: 3px solid var(--primary);
+  padding: 6px 8px;
+  font-size: 0.82rem;
+}
+
+.schedule td.booked strong { display: block; }
+.schedule td.booked span { color: var(--muted); font-size: 0.75rem; }
+
+.schedule td.free { background: #fff; }
+
+.legend { margin-top: 8px; font-size: 0.8rem; }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; }
+.dot-booked { background: #dbeafe; border: 1px solid var(--primary); }
+.dot-free { background: #fff; border: 1px solid var(--border); }
+
+.badge {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.court-card { display: flex; flex-direction: column; }
+.court-card .btn-block { margin-top: auto; }
+
+.btn-block { display: block; width: 100%; text-align: center; margin-top: 12px; }
+
+/* Polished surfaces */
+.card {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.site-header {
+  background: linear-gradient(90deg, #1e3a8a, #2563eb);
+  border-bottom: none;
+}
+
+.site-header .brand,
+.site-header nav a { color: #fff; }
+
+.site-header nav a:hover { text-decoration: underline; }
