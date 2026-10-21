@@ -11,7 +11,7 @@ Aplicación web fullstack para que un club administre las reservas de sus **3 ca
 
 ## Funcionalidades
 
-- Dashboard con las 3 canchas y las reservas del día.
+- Dashboard con las 3 canchas, contador de reservas del día y **agenda diaria** (grilla por horas).
 - Listado de canchas.
 - Reservas por cancha y por día, con selector de fecha.
 - Crear reserva.
@@ -25,6 +25,7 @@ Una reserva se rechaza con un mensaje claro si:
 2. **Fecha/hora pasada:** la hora de inicio ya pasó.
 3. **Fin <= inicio:** la hora de fin no es posterior a la de inicio.
 4. **Duración fuera de rango:** debe durar entre 60 y 120 minutos (1 a 2 horas inclusive).
+5. **Club cerrado** *(opcional)*: no se admiten reservas fuera del horario de apertura (08:00 a 22:00).
 
 ## Cómo ejecutar
 
@@ -62,7 +63,7 @@ Todo pasa por la variable de entorno `DATABASE_URL` (ver `.env.example`):
 pytest
 ```
 
-Cubren superposición (incluido el solapado 10–11:30 vs 11–12), reservas consecutivas válidas, fecha pasada, duración fuera de rango (muy corta y muy larga), fin <= inicio, límites de 1 y 2 horas exactas, y cancelación.
+Cubren superposición (incluido el solapado 10–11:30 vs 11–12), reservas consecutivas válidas, fecha pasada, duración fuera de rango (muy corta y muy larga), fin <= inicio, club cerrado (antes de apertura y después del cierre), nombre vacío, límites de 1 y 2 horas exactas, y cancelación.
 
 ## Estructura
 
@@ -94,4 +95,4 @@ tests/           # conftest + tests
 - **Superposición con reservas consecutivas:** hubo que definir con precisión la condición de solape (`inicio_nueva < fin_existente` y `fin_nueva > inicio_existente`) para que 10–11 y 11–12 se consideren válidas.
 - **Instalación de Docker/PostgreSQL:** Docker no estaba instalado inicialmente y su instalación requirió `sudo` y agregar el usuario al grupo `docker`. El flujo se validó primero con SQLite (desarrollo local) y luego contra PostgreSQL vía `docker compose up --build`, confirmando que el mismo código funciona en ambos motores.
 - **Zona horaria:** las fechas/horas se manejan en hora local del servidor (sin timezone). Es suficiente para el challenge, pero es una limitación conocida si la app se desplegara multi-zona.
-- **Alcance:** las 4 funcionalidades y las 4 reglas están completas. Quedan fuera (posibles mejoras): Alembic para migraciones, autenticación de usuarios, edición de reservas, notificaciones y manejo de timezones.
+- **Alcance:** las 4 funcionalidades y las 4 reglas obligatorias están completas. Además se implementaron dos de los tres aspectos opcionales: la grilla por horas del día y las pruebas automáticas de superposición; también la regla opcional de club cerrado (08:00–22:00). Quedan fuera (posibles mejoras): Alembic para migraciones, autenticación de usuarios, edición de reservas, notificaciones y manejo de timezones.

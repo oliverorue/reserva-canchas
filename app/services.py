@@ -3,6 +3,7 @@ from datetime import date, datetime, time
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.config import CLUB_CLOSE_MINUTES, CLUB_OPEN_MINUTES
 from app.models import Reservation
 from app.schemas import ReservationCreate
 
@@ -13,6 +14,10 @@ MAX_DURATION_MINUTES = 120
 def duration_minutes(start_time: time, end_time: time) -> int:
     delta = datetime.combine(date.min, end_time) - datetime.combine(date.min, start_time)
     return int(delta.total_seconds() // 60)
+
+
+def _to_minutes(t: time) -> int:
+    return t.hour * 60 + t.minute
 
 
 def _overlaps(start_a: time, end_a: time, start_b: time, end_b: time) -> bool:
@@ -32,6 +37,12 @@ def validate_rules(data: ReservationCreate, existing: list[Reservation]) -> list
         errors.append("La reserva debe durar al menos 60 minutos (1 hora).")
     elif duration > MAX_DURATION_MINUTES:
         errors.append("La reserva no puede durar más de 120 minutos (2 horas).")
+
+    if (
+        _to_minutes(data.start_time) < CLUB_OPEN_MINUTES
+        or _to_minutes(data.end_time) > CLUB_CLOSE_MINUTES
+    ):
+        errors.append("El club está cerrado en ese horario (abierto de 08:00 a 22:00).")
 
     start_dt = datetime.combine(data.date, data.start_time)
     if start_dt <= datetime.now():

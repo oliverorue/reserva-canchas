@@ -11,6 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app import models
+from app.config import CLUB_CLOSE_MINUTES, CLUB_OPEN_MINUTES
 from app.database import Base, SessionLocal, engine, get_db
 from app.schemas import ReservationCreate, ReservationOut
 from app.services import create_reservation
@@ -57,8 +58,8 @@ def _parse_time(value: str) -> time:
         raise HTTPException(status_code=400, detail="Hora inválida. Usar HH:MM.")
 
 
-DAY_START_MINUTES = 8 * 60
-DAY_END_MINUTES = 22 * 60
+DAY_START_MINUTES = CLUB_OPEN_MINUTES
+DAY_END_MINUTES = CLUB_CLOSE_MINUTES
 SLOT_MINUTES = 30
 
 
@@ -175,10 +176,18 @@ def create(
     if court is None:
         raise HTTPException(status_code=404, detail="Cancha no encontrada")
 
+    name = person_name.strip()
+    if not name:
+        return _redirect_back(court_id, date, error="El nombre de la persona es obligatorio.")
+    if len(name) > 100:
+        return _redirect_back(
+            court_id, date, error="El nombre no puede superar los 100 caracteres."
+        )
+
     try:
         data = ReservationCreate(
             court_id=court_id,
-            person_name=person_name.strip(),
+            person_name=name,
             date=_parse_date(date),
             start_time=_parse_time(start_time),
             end_time=_parse_time(end_time),

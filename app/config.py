@@ -8,3 +8,8 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+
+# Horario de apertura/cierre del club (regla opcional de "club cerrado").
+CLUB_OPEN_MINUTES = 8 * 60   # 08:00
+CLUB_CLOSE_MINUTES = 22 * 60  # 22:00
