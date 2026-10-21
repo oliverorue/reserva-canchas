@@ -19,6 +19,10 @@ services:
       - "8000:8000"
     environment:
       DATABASE_URL: postgresql+psycopg://usuario:pass@db:5432/reservas
+    volumes:
+      # Usa la zona horaria del host para que date.today()/datetime.now()
+      # coincidan con la hora local (regla de "fechas pasadas" correcta).
+      - /etc/localtime:/etc/localtime:ro
     depends_on:
       db:
         condition: service_healthy
