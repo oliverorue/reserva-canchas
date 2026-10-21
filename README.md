@@ -92,6 +92,6 @@ tests/           # conftest + tests
 ## Problemas encontrados y alcance
 
 - **Superposición con reservas consecutivas:** hubo que definir con precisión la condición de solape (`inicio_nueva < fin_existente` y `fin_nueva > inicio_existente`) para que 10–11 y 11–12 se consideren válidas.
-- **Instalación de Docker/PostgreSQL:** en el entorno de desarrollo no estaban instalados y no había permisos `sudo`, por lo que se validó el flujo completo con SQLite. La configuración de Docker está lista y documentada para ejecutarla en un entorno con Docker.
+- **Instalación de Docker/PostgreSQL:** Docker no estaba instalado inicialmente y su instalación requirió `sudo` y agregar el usuario al grupo `docker`. El flujo se validó primero con SQLite (desarrollo local) y luego contra PostgreSQL vía `docker compose up --build`, confirmando que el mismo código funciona en ambos motores.
 - **Zona horaria:** las fechas/horas se manejan en hora local del servidor (sin timezone). Es suficiente para el challenge, pero es una limitación conocida si la app se desplegara multi-zona.
 - **Alcance:** las 4 funcionalidades y las 4 reglas están completas. Quedan fuera (posibles mejoras): Alembic para migraciones, autenticación de usuarios, edición de reservas, notificaciones y manejo de timezones.
