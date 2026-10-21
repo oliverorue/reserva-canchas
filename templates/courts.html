@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Canchas — Reserva de Canchas{% endblock %}
+{% block content %}
+<h1>Canchas</h1>
+<div class="court-grid">
+  {% for court in courts %}
+    <section class="card">
+      <h2>{{ court.name }}</h2>
+      <a class="btn btn-secondary" href="/courts/{{ court.id }}/reservations">Ver reservas</a>
+    </section>
+  {% endfor %}
+</div>
+{% endblock %}

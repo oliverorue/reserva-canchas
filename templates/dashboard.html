@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Reserva de Canchas{% endblock %}
+{% block content %}
+<h1>Dashboard</h1>
+<p class="muted">Reservas de hoy: {{ today.strftime('%d/%m/%Y') }}</p>
+
+<div class="court-grid">
+  {% for court in courts %}
+    <section class="card">
+      <div class="card-header">
+        <h2>{{ court.name }}</h2>
+        <a class="btn btn-secondary" href="/courts/{{ court.id }}/reservations?date={{ today }}">Ver / Reservar</a>
+      </div>
+      {% set items = by_court.get(court.id, []) %}
+      {% if items %}
+        <ul class="reservation-list">
+          {% for r in items %}
+            <li>
+              <strong>{{ r.start_time.strftime('%H:%M') }} – {{ r.end_time.strftime('%H:%M') }}</strong>
+              <span>{{ r.person_name }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="muted">Sin reservas hoy.</p>
+      {% endif %}
+    </section>
+  {% endfor %}
+</div>
+{% endblock %}

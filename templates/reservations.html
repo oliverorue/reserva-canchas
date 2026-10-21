@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}{{ court.name }} — Reservas{% endblock %}
+{% block content %}
+<div class="page-header">
+  <a href="/courts" class="muted">← Volver a canchas</a>
+  <h1>{{ court.name }}</h1>
+</div>
+
+<form method="get" class="date-nav">
+  <label for="date">Fecha:</label>
+  <input type="date" id="date" name="date" value="{{ day.strftime('%Y-%m-%d') }}">
+  <button type="submit" class="btn btn-secondary">Ver</button>
+</form>
+
+<div class="two-col">
+  <section class="card">
+    <h2>Reservas del {{ day.strftime('%d/%m/%Y') }}</h2>
+    {% if reservations %}
+      <ul class="reservation-list">
+        {% for r in reservations %}
+          <li>
+            <div>
+              <strong>{{ r.start_time.strftime('%H:%M') }} – {{ r.end_time.strftime('%H:%M') }}</strong>
+              <span>{{ r.person_name }}</span>
+            </div>
+            <form method="post" action="/reservations/{{ r.id }}/cancel">
+              <input type="hidden" name="court_id" value="{{ court.id }}">
+              <input type="hidden" name="date" value="{{ day.strftime('%Y-%m-%d') }}">
+              <button type="submit" class="btn btn-danger" onclick="return confirm('¿Cancelar esta reserva?')">Cancelar</button>
+            </form>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="muted">No hay reservas para esta fecha.</p>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <h2>Nueva reserva</h2>
+    <form method="post" action="/reservations" class="reservation-form">
+      <input type="hidden" name="court_id" value="{{ court.id }}">
+      <input type="hidden" name="date" value="{{ day.strftime('%Y-%m-%d') }}">
+      <label>
+        Nombre
+        <input type="text" name="person_name" required minlength="1" maxlength="100">
+      </label>
+      <label>
+        Hora de inicio
+        <input type="time" name="start_time" required>
+      </label>
+      <label>
+        Hora de fin
+        <input type="time" name="end_time" required>
+      </label>
+      <button type="submit" class="btn btn-primary">Reservar</button>
+    </form>
+  </section>
+</div>
+{% endblock %}
